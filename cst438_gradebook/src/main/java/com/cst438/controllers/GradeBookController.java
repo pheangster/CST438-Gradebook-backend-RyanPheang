@@ -190,6 +190,10 @@ public class GradeBookController {
 	}
 	
 	@PutMapping("/gradebook{id}")
+	@Transactional
+	public void changeAssignmentName() {
+		
+	}
 	
 	@DeleteMapping("/gradebook/delete{id}")
 	@Transactional
