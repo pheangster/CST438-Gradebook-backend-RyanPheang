@@ -3,6 +3,7 @@ package com.cst438.controllers;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,7 @@ import com.cst438.domain.GradebookDTO;
 import com.cst438.services.RegistrationService;
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:3000","http://localhost:3001"})
+@CrossOrigin(origins = "http://localhost:3000")
 public class GradeBookController {
 	
 	@Autowired
@@ -173,23 +174,23 @@ public class GradeBookController {
 		return assignment;
 	}
 	
-	@PostMapping("/assignment/add")
-	@Transactional
-	public void addAssignment(@RequestParam("id") int courseId, @RequestParam("name") String assignmentName, @RequestParam("dueDate") Date dueDate) {
-		
-		Assignment assignment = new Assignment();
-		Course course = courseRepository.findById(courseId).orElse(null);
-		
-		assignment.setName(assignmentName);
-		assignment.setDueDate(dueDate);
-		assignment.setCourse(course);
-		assignment.setNeedsGrading(1);
-		
-		course.getAssignments().add(assignment);
-		assignmentRepository.save(assignment);
-	}
+//	@PostMapping("/assignment/add")
+//	@Transactional
+//	public void addAssignment(@RequestParam("id") int courseId, @RequestParam("name") String assignmentName, @RequestParam("dueDate") Date dueDate) {
+//		
+//		Assignment assignment = new Assignment();
+//		Course course = courseRepository.findById(courseId).orElse(null);
+//		
+//		assignment.setName(assignmentName);
+//		assignment.setDueDate(dueDate);
+//		assignment.setCourse(course);
+//		assignment.setNeedsGrading(1);
+//		
+//		course.getAssignments().add(assignment);
+//		assignmentRepository.save(assignment);
+//	}
 	
-	@PutMapping("/gradebook/editName/{id}")
+	@PutMapping("/assignment/{id}")
 	@Transactional
 	public void changeAssignmentName(@PathVariable("id") Integer assignmentId, @RequestParam("name") String newAssignmentName) {
 		
@@ -199,7 +200,7 @@ public class GradeBookController {
 	}
 	
 	
-	@DeleteMapping("/gradebook/delete/{id}")
+	@DeleteMapping("/assigment/{id}")
 	@Transactional
 	public void deleteAssignment(@PathVariable("id") Integer assignmentId) {
 		
@@ -207,6 +208,40 @@ public class GradeBookController {
 		assignmentRepository.delete(a);
 		
 	}
+	
+//	@PostMapping("/gradebook")
+	@PostMapping("/assignment/add")
+	@Transactional
+	public void addAssignment(@RequestBody AssignmentListDTO.AssignmentDTO newAssignment) {
+		if(null == newAssignment) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body cannot be null");
+		}
+		
+		if(newAssignment.courseId == 0) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "courseID must be specified");
+		}
+		
+		Course course = courseRepository.findById(newAssignment.courseId).orElse(null);
+		if(course == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "courseID not found");
+		}
+		
+		String instructorEmail = "dwisneski@csumb.edu";
+		if(!course.getInstructor().equals(instructorEmail)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current User is not authorized to add new assignments");
+		}
+		
+		if(newAssignment.assignmentName == null || newAssignment.dueDate == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "assignmentName/ dueDate cannot be equal null values");
+		}
+		
+		Assignment assignment = new Assignment();
+		assignment.setName(newAssignment.assignmentName);
+		assignment.setDueDate(java.sql.Date.valueOf(newAssignment.dueDate));
+		assignment.setCourse(course);
+		assignmentRepository.save(assignment);
+	}
+	
 	
 	
 }
