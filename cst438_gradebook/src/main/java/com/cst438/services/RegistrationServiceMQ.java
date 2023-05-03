@@ -45,6 +45,20 @@ public class RegistrationServiceMQ extends RegistrationService {
 	public void receive(EnrollmentDTO enrollmentDTO) {
 		
 		//TODO  complete this method in homework 4
+		Course c = courseRepository.findById(enrollmentDTO.course_id).get();
+		if(c == null) {
+			throw new ResponseStatusException(Https.BAD_REQUEST, "course id not found");
+		}
+		
+		Enrollment e = new Enrollment();
+		e.setStudentEmail(enrollmentDTO.studentEmail);
+		e.setStudentName(enrollmentDTO.studentName);
+		e.setCourse(c);
+		
+		e = enrollmentRepository.save(e);
+		enrollmentDTO.id = e.getId();
+		
+		System.out.println("Enrollment successfully added: ");
 		
 	}
 
@@ -53,7 +67,8 @@ public class RegistrationServiceMQ extends RegistrationService {
 	public void sendFinalGrades(int course_id, CourseDTOG courseDTO) {
 		 
 		//TODO  complete this method in homework 4
-		
+		rabbitTemplate.convertAndSend(registrationQueue.getName(), courseDTO);
+		System.out.println("Final grades sent");
 	}
 
 }
